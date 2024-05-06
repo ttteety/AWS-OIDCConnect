@@ -11,10 +11,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Git clone the repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: configure aws credentials
-              uses: aws-actions/configure-aws-credentials@v1
+              uses: aws-actions/configure-aws-credentials@v4.0.2
               with:
                 role-to-assume: arn:aws:iam::474008122042:role/github-oidc
                 role-session-name: samplerolesession
