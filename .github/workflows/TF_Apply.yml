@@ -1,0 +1,48 @@
+name: Terraform-Apply-Infra-Release
+
+on:
+  push:
+    branches: 
+      - main 
+permissions:
+  id-token: write 
+  contents: read 
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    env: 
+      AWS_REGION: ap-southeast-2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::474008122042:role/github-oidc
+          role-session-name: samplerolesession
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.0
+
+      - name: Terraform Init
+        id: init 
+        run: |
+            echo -e "access_key = \"${AWS_ACCESS_KEY_ID}"\"\nsecret_key = \"${AWS_SECRET_ACCESS_KEY}\"\ntoken = \"${AWS_SESSION_TOKEN}\"\nregion = \"${AWS_REGION:-${AWS_DEFAULT_REGION}}\"" | tee credentials.auto.tfvars
+            terraform init
+
+      - name: Terraform Plan 
+        id: plan 
+        run: terraform plan -no-color
+        continue-on-error: true 
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply --auto-approve
